@@ -1,0 +1,13 @@
+Seulement dans vmnet-only: orig
+diff -ru vmnet-only.orig/userif.c vmnet-only/userif.c
+--- vmnet-only.orig/userif.c	2018-11-21 10:26:00.000000000 +0100
++++ vmnet-only/userif.c	2019-03-07 18:12:46.849340598 +0100
+@@ -142,7 +142,7 @@
+                  struct page **p, // OUT: locked page
+                  void **ptr)      // OUT: kernel mapped pointer
+ {
+-   if (!access_ok(VERIFY_WRITE, (void *)uAddr, size) ||
++   if (!access_ok((void *)uAddr, size) ||
+        (((uAddr + size - 1) & ~(PAGE_SIZE - 1)) !=
+         (uAddr & ~(PAGE_SIZE - 1)))) {
+       return -EINVAL;

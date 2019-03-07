@@ -1,0 +1,52 @@
+diff -ru vmmon-only.orig/linux/hostif.c vmmon-only/linux/hostif.c
+--- vmmon-only.orig/linux/hostif.c	2018-11-21 10:25:56.000000000 +0100
++++ vmmon-only/linux/hostif.c	2019-03-07 18:20:23.693467201 +0100
+@@ -1638,9 +1638,9 @@
+     * since at least 2.6.0.
+     */
+ 
+-   extern unsigned long totalram_pages;
++   extern atomic_long_t _totalram_pages;
+ 
+-   unsigned int totalPhysicalPages = totalram_pages;
++   unsigned int totalPhysicalPages = atomic_long_read(&_totalram_pages);
+ 
+    /*
+     * Use the memory information linux exports as of late for a more
+@@ -1784,7 +1784,12 @@
+       monoBase = uptimeState.monotimeBase;
+    } while (!VersionedAtomic_EndTryRead(&uptimeState.version, version));
+ 
+-   do_gettimeofday(&tv);
++   {
++       struct timespec64 now;
++       ktime_get_real_ts64(&now);
++       tv.tv_sec = now.tv_sec;
++       tv.tv_usec = now.tv_nsec/1000;
++   }
+    upBase = Atomic_Read64(&uptimeState.uptimeBase);
+ 
+    monotime = (uint64)(jifs - jifBase) * (UPTIME_FREQ / HZ);
+@@ -1898,7 +1903,12 @@
+    struct timeval tv;
+ 
+    uptimeState.jiffiesBase = jiffies;
+-   do_gettimeofday(&tv);
++   {
++       struct timespec64 now;
++       ktime_get_real_ts64(&now);
++       tv.tv_sec = now.tv_sec;
++       tv.tv_usec = now.tv_nsec/1000;
++   }
+    Atomic_Write64(&uptimeState.uptimeBase,
+                   -(tv.tv_usec * (UPTIME_FREQ / 1000000) +
+                     tv.tv_sec * UPTIME_FREQ));
+@@ -3405,7 +3415,7 @@
+ 
+    ASSERT(handle);
+ 
+-   if (!access_ok(VERIFY_WRITE, p, size)) {
++   if (!access_ok(p, size)) {
+       printk(KERN_ERR "%s: Couldn't verify write to uva 0x%p with size %"
+              FMTSZ"u\n", __func__, p, size);
+ 
